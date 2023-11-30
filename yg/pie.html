@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Pie Chart</title>
+    <style>
+        /* 添加样式 */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 500px;
+            height: 500px;
+            position: relative;
+        }
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px;
+            margin-right: 10px;
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #aaa;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+        }
+        .conclusion {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>用户数据统计</h1>
+    <div class="container">
+        <svg class="chart"></svg>
+        <div class="tooltip"></div>
+    </div>
+    <div>
+        <button class="button" id="subscribeBtn">订阅</button>
+        <button class="button" id="genderBtn">男女</button>
+    </div>
+    <div id="conclusion" class="conclusion"></div>
+
+    <script src="d3.min.js"></script>
+    <script>
+        // 数据
+        const subscriberCount = 1819655;
+        const visitorCount = 462444;
+        const maleCount = 1141059;
+        const femaleCount = subscriberCount - maleCount;
+
+        // 创建SVG元素
+        const svg = d3.select(".chart")
+            .attr("width", "100%")
+            .attr("height", "100%");
+
+        // 初始化显示订阅用户比例饼图
+        updatePieChart(subscriberCount, visitorCount, "订阅用户", "游客", "#36a2eb", "#ff6384");
+
+        // 订阅按钮点击事件
+        d3.select("#subscribeBtn").on("click", function() {
+            updatePieChart(subscriberCount, visitorCount, "订阅用户", "游客", "#36a2eb", "#ff6384");
+        });
+
+        // 男女按钮点击事件
+        d3.select("#genderBtn").on("click", function() {
+            updatePieChart(maleCount, femaleCount, "男", "女", "#36a2eb", "#ff6384");
+        });
+
+        // 更新饼图
+        function updatePieChart(count1, count2, label1, label2, color1, color2) {
+            // 数据
+            const data = [
+                { label: label1, count: count1 },
+                { label: label2, count: count2 }
+            ];
+
+            // 颜色比例尺
+            const colorScale = d3.scaleOrdinal()
+                .domain(data.map(d => d.label))
+                .range([color1, color2]);
+
+            // 饼图生成器
+            const pie = d3.pie()
+                .value(d => d.count)
+                .sort(null);
+
+            // 路径生成器
+            const arc = d3.arc()
+                .innerRadius(0)
+                .outerRadius(200);
+
+            // 清空现有图形
+            svg.selectAll("*").remove();
+
+            // 创建饼图组
+            const pieGroup = svg.append("g")
+                .attr("transform", "translate(250, 250)");
+
+            // 创建饼图扇形
+            const slices = pieGroup.selectAll("path")
+                .data(pie(data))
+                .enter()
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", d => colorScale(d.data.label))
+                .on("mouseover", function(d) {
+                    const percentage = (d.data.count / (count1 + count2)) * 100;
+                    const tooltipText = `${d.data.label}: ${percentage.toFixed(2)}% ${d.data.count}`;
+                    showTooltip(tooltipText, d3.event.pageX, d3.event.pageY);
+                })
+                .on("mouseout", function() {
+                    hideTooltip();
+                });
+
+            // 添加注释
+            const labels = pieGroup.selectAll("text")
+                .data(pie(data))
+                .enter()
+                .append("text")
+                .attr("transform", d => `translate(${arc.centroid(d)})`)
+                .attr("text-anchor", "middle")
+                .text(d => `${d.data.label}: ${(d.data.count / (count1 + count2) * 100).toFixed(2)}% ${d.data.count}`)
+                .style("fill", "black")
+                .style("font-size", "12px");
+
+            // 更新结论
+            updateConclusion(count1, count2, label1, label2);
+        }
+
+        // 更新结论
+        function updateConclusion(count1, count2, label1, label2) {
+            const conclusionElement = document.getElementById("conclusion");
+            const percentage1 = (count1 / (count1 + count2)) * 100;
+            const percentage2 = (count2 / (count1 + count2)) * 100;
+            const conclusionText = `根据数据统计，${label1}占比为${percentage1.toFixed(2)}%，${label2}占比为${percentage2.toFixed(2)}%。`;
+            conclusionElement.textContent = conclusionText;
+        }
+
+        // 创建提示框
+        const tooltip = d3.select(".tooltip")
+            .style("opacity", 0);
+
+        // 显示提示框
+        function showTooltip(text, x, y) {
+            tooltip
+                .style("left", (x + 10) + "px")
+                .style("top", (y - 10) + "px")
+                .text(text)
+                .style("opacity", 1);
+        }
+
+        // 隐藏提示框
+        function hideTooltip() {
+            tooltip.style("opacity", 0);
+        }
+    </script>
+</body>
+</html>

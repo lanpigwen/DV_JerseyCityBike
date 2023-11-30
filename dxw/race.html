@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>各年龄段用户在一天中的租赁数量变化</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="icon" href="bicycle.png" sizes="32x32">
+    <script src="https://kit.fontawesome.com/200cae3b92.js" crossorigin="anonymous"></script>
+    <script src="d3.min.js"></script>
+    <style>
+        a {
+            color: black;
+            text-decoration:none;
+        }
+
+        .show-div {
+            /* width: 1300px; */
+            display: flex;
+            margin: 0 auto;
+            margin-top: 0;
+        }
+
+        .tool-div {
+            margin: 80px 20px 0px 100px;
+            /* margin-top: 50px; */
+            width: auto;
+        }
+
+        .ab_a {
+            position: absolute;
+            left: 100px;
+            top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: center;">
+        <a class="ab_a" href="../index.html" style="font-size: 30px;"><i class="fa-solid fa-angle-left"></i>首页</a>
+        <h1 style="display: inline;">在泽西市的自行车租赁服务中，各年龄段用户在一天中的租赁数量变化</h1>
+    </div>
+    <div class="show-div">
+        <div>
+            <svg width="1300" height="770" id="mainsvg" class="svgs"></svg>
+            <div style="margin-left: 140px;">
+
+                <input type="range" id="progress_bar" min="0" max="23" step="1" value="-1" style="width:1100px;">
+                <button id="reduce">-</button>
+                <button id="add">+</button>
+            </div>
+        </div>
+        <div class="tool-div">
+            <h2>结论：</h2>
+            <p>
+                可以看出26-40岁的用户是共享单车的主要用户群体，且存在较明显的早晚⾼峰出⾏规律——8点以及18点。<br>
+                在早晚高峰时，主要骑行人群的年龄段是26-40岁，骑行量为其他年龄的两倍之多，这两个时间段的骑⾏量也远⾼于其他时间段，是⼀天骑⾏量的主要贡献时间段。
+            </p>
+            <p>
+                而其他时间段中，51-60岁也比较活跃，这个群体主要在12点过后开始骑行。
+            </p>
+        </div>
+    </div>
+    <script>
+        // The following code is the typical routine of my d3.js code. 
+        const svg = d3.select('svg');
+        const width = svg.attr('width');
+        const height = svg.attr('height');
+        const margin = { top: 60, right: 80, bottom: 80, left: 150 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+        const mainGroup = svg.append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`)
+
+
+        const xValue = d => d.num;
+        const yValue = d => d.age;
+
+        const xValueC = d => d.Customer;
+        const xValueS = d => d.Subscriber;
+        const xScale = d3.scaleLinear();
+        const yScale = d3.scaleBand();
+        const colorScale = d3.scaleOrdinal();
+        let xAxis, yAxis;
+        let xAxisGroup, yAxisGroup;
+        mainGroup.append('text').attr('fill', 'black').attr('font-size', '2em')
+            .attr('x', 1000).attr('y', 600).attr('id', 'hourtext');
+        const formatPercent = d3.format(".0f");
+
+        const render = async function (data) {
+            data.sort(d => d.num);
+            // calculating scales: 
+            yScale.domain(data.map(yValue)).range([0, innerHeight]).padding(0.1);
+            xScale.domain([0, d3.max(data, xValue)]).range([0, innerWidth]);
+            // data-join (enter-selection) for rectangles: 
+            let enter = mainGroup.selectAll('rect').data(data, d => d.age).enter().append('rect')
+                .attr('height', yScale.bandwidth()).attr('x', 0)
+                .attr('y', d => yScale(yValue(d)))
+                .attr('fill', d => colorScale(yValue(d)));//.attr('fill', (d, i) => d3.interpolateSpectral(i * 1/(data.length-1)))
+
+            // data-join (enter-selection) for data-texts:
+            let enterText = mainGroup.selectAll('.datatext').data(data, d => d.age).enter().append('text')
+                .attr('class', 'datatext').attr('alignment-baseline', 'central ')
+                .attr('x', 3).attr('y', d => yScale.bandwidth() / 2 + yScale(yValue(d))).attr('fill', 'black');
+            // altering hour-text: 
+            d3.select('#hourtext').text(data[0].hour + ":00").raise();
+            // animation: 
+            let transition = d3.transition().duration(1000).ease(d3.easeLinear);
+
+            // mainGroup.selectAll('rect').merge(enter).transition(transition)
+            //     .attr('width', d => xScale(xValue(d)))
+            //     .attr('y', d => yScale(yValue(d)))
+            //     .attr('height', yScale.bandwidth());
+
+            mainGroup.selectAll('rect').merge(enter).transition(transition)
+                .attr('width', d => xScale(xValue(d)))
+                .attr('y', d => yScale(yValue(d)))
+                .attr('height', yScale.bandwidth());
+
+            mainGroup.selectAll('.datatext').merge(enterText).transition(transition)
+                .attr('x', d => 3 + xScale(xValue(d))).attr('y', d => yScale.bandwidth() / 2 + yScale(yValue(d)))
+                .tween("text", function (d) {
+                    var i = d3.interpolate(this.textContent, d.num);
+                    return function (t) {
+                        this.textContent = formatPercent(i(t));
+                    };
+                });
+            xAxisGroup.transition(transition).call(xAxis);
+            yAxisGroup.transition(transition).call(yAxis);
+            d3.selectAll('.tick text').attr('font-size', '1.5em')
+            await transition.end();
+        }
+
+        /* 
+          Loading data and preprocessing data. 
+          Note that you can also preprocessing data in your own way using your prefered language, e.g., Python. 
+        */
+        d3.csv('race.csv').then(async data => {
+            data.forEach(d => {
+                d.num = +(d.num);
+                d.hour = +(d.hour);
+            })
+            // get all hours:
+            const hours = Array.from(new Set(data.map(d => d.hour)));
+            hours.sort((a, b) => { return parseInt(a) - parseInt(b) });
+            console.log(hours)
+            // get ages:
+            const ages = Array.from(new Set(data.map(yValue)));
+            // colors:
+            colorScale.domain(ages);
+            const sp = d3.scalePoint().domain(ages).range([0, 1]);
+            colorScale.range(ages.map(d => d3.interpolateSpectral(sp(d))));
+            // calculationg initial scales: 
+            yScale.range([0, innerHeight]).padding(0.1);
+            xScale.range([0, innerWidth]);
+            // adding axes: 
+            xAxis = d3.axisBottom(xScale);
+            yAxis = d3.axisLeft(yScale);
+            xAxisGroup = mainGroup.append('g').call(xAxis);
+            yAxisGroup = mainGroup.append('g').call(yAxis);
+            xAxisGroup.attr('transform', `translate(${0}, ${innerHeight})`);
+            // titles of axes: 
+            xAxisGroup.append('text').attr('class', 'axisTitle').text('骑行量')
+                .attr('x', innerWidth / 2).attr('y', 60);
+            yAxisGroup.append('text').attr('class', 'axisTitle').text('年龄段')
+                .attr('transform', 'rotate(-90)').attr('x', -innerHeight / 2).attr('y', -60);
+            d3.selectAll('.axisTitle').attr('text-anchor', "middle").attr('fill', 'black').attr('font-size', '2em');
+            // font-size of texts of axes: 
+            d3.selectAll('.tick text').attr('font-size', '1.5em')
+            data.sort((a, b) => b.num - a.num);
+
+
+            for (let i = 0; i < hours.length; i++) {
+                document.getElementById('progress_bar').value = i;
+                await render(data.filter(d => d.hour === hours[i]));
+            }
+
+
+            var progressBar = document.getElementById("progress_bar");
+            progressBar.addEventListener("input", function (event) {
+                var value = event.target.value;
+                render(data.filter(d => d.hour === hours[value]));
+            });
+
+            function reduce() {
+                if (document.getElementById('progress_bar').value > 0) {
+                    document.getElementById('progress_bar').value--;
+                    let value = document.getElementById('progress_bar').value;
+                    render(data.filter(d => d.hour === hours[value]));
+                }
+            }
+
+            function add() {
+                if (document.getElementById('progress_bar').value < 23) {
+                    document.getElementById('progress_bar').value++;
+                    let value = document.getElementById('progress_bar').value;
+                    render(data.filter(d => d.hour === hours[value]));
+                }
+            }
+
+            document.getElementById('reduce').onclick = reduce;
+            document.getElementById('add').onclick = add;
+
+        })
+
+    </script>
+</body>
+
+</html>

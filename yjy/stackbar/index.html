@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>
+		</title>
+	</head>
+	<body>
+		<div id="test-svg">
+		</div>
+	</body>
+	<script src="./d3.v5.min.js">
+	</script>
+	<script>
+		window.onload = function() {
+			var data = [
+                {
+                    "1": 7479,
+                    "2": 8250,
+                    "3": 13499,
+                    "4": 16311,
+                    "5": 19480,
+                    "6": 23943,
+                    "7": 24430,
+                    "8": 34095,
+                    "9": 33300,
+                    "10": 29561,
+                    "11": 21783,
+                    "12": 15073,
+                },
+                {
+                    "1": 12908,
+                    "2": 13960,
+                    "3": 12168,
+                    "4": 21186,
+                    "5": 25966,
+                    "6": 32060,
+                    "7": 33573,
+                    "8": 35472,
+                    "9": 33119,
+                    "10": 34919,
+                    "11": 23582,
+                    "12": 15898,
+                },
+                {
+                    "1":  12677,
+                    "2":  15104,
+                    "3":  17109,
+                    "4":  23634,
+                    "5":  34456,
+                    "6":  40937,
+                    "7":  42268,
+                    "8":  44432,
+                    "9":  39022,
+                    "10": 39138,
+                    "11": 24910,
+                    "12": 20205,
+                },
+                {
+                    "1":  19676,
+                    "2":  18565,
+                    "3":  23606,
+                    "4":  33056,
+                    "5":  36135,
+                    "6":  39430,
+                    "7":  43746,
+                    "8":  48711,
+                    "9":  49244,
+                    "10": 42253,
+                    "11": 30797,
+                    "12": 19728,
+                },
+                {
+                    "1":  26020,
+                    "2":  22962,
+                    "3":  17719,
+                    "4":  9268,
+                    "5":  25077,
+                    "6":  36921,
+                    "7":  38680,
+                    "8":  43267,
+                    "9":  40382,
+                    "10": 43537,
+                    "11": 21275,
+                    "12": 11694,
+                },
+                {
+                    "1":  11624,
+                    "2":  4881,
+                    "3":  17123,
+                    "4":  23774,
+                    "5":  45043,
+                    "6":  71442,
+                    "7":  82578,
+                    "8":  93821,
+                    "9":  97313,
+                    "10": 88762,
+                    "11": 60061,
+                    "12": 48021,
+                },
+                {
+                    "1":  26762,
+                    "2":  31911,
+                    "3":  51671,
+                    "4":  62528,
+                    "5":  80482,
+                    "6":  103299,
+                    "7":  108502,
+                    "8":  115231,
+                    "9":  104247,
+                    "10": 89558,
+                    "11": 72709,
+                    "12": 48585,
+                },
+            ];
+			var width = 800,
+				height = 680,
+				padding = {
+					top: 30,
+					right: 30,
+					bottom: 30,
+					left: 30
+				};
+			var colors = d3.schemeSet2;
+			var svg = d3.select("#test-svg")
+				.append('svg')
+				.attr('width', width + 'px')
+				.attr('height', height + 'px');
+
+            // "2016", "2017", "2018", "2019", "2020", "2021", "2022"
+			var stack = d3.stack()
+				.keys(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+				.order(d3.stackOrderNone)
+				.offset(d3.stackOffsetNone);
+			var series = stack(data);
+			
+
+			var xScale = d3.scaleOrdinal()
+				.domain(["2016", "2017", "2018", "2019", "2020", "2021", "2022"])
+				.range([100, 200, 300, 400, 500, 600, 700]);
+			var xAxis = d3.axisBottom()
+				.scale(xScale)
+				.tickSize(9);
+			svg.append('g')
+				.call(xAxis)
+				.attr("transform", "translate(0," + (height - padding.bottom) + ")")
+				.selectAll("text")
+				.attr("font-size", "10px")
+				.attr("dx", "50px");
+			
+			var maxNum = d3.max(series,
+				function(d) {
+					return d3.max(d,
+						function(dd) {
+							return dd[1];
+						})
+				});
+
+			var yScale = d3.scaleLinear()
+				.domain([0, maxNum])
+				.range([height - padding.bottom, padding.top]);
+			var yAxis = d3.axisLeft()
+				.scale(yScale)
+				.ticks(10);
+				
+			svg.append('g')
+				.call(yAxis)
+				.attr("transform", "translate(" + 100 + ",0)");
+				
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height - padding.bottom + 20)
+                .attr("text-anchor", "middle")
+                .text("年份");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", padding.left / 2)
+                .attr("text-anchor", "middle")
+                .text("骑行量");
+
+			var bar = svg.selectAll(".bar")
+				.data(series)
+				.join("g")
+				.attr("class", "bar")
+				.selectAll("rect")
+				.data(function(d) {
+					return d;
+				});
+				
+			bar.join("rect")
+				.attr("x", 1)
+				.attr("width", 100)
+				.attr("height",
+					function(d, i) {
+						return height - yScale(d[1] - d[0]) - padding.bottom;
+					})
+				.attr("transform",
+					function(d, i) {
+						return "translate(" + xScale(i * 100) + "," + yScale(d[1]) + ")";
+					})
+				.attr("stroke", "White")
+				.attr("fill",
+					function(d, i) {
+						return colors[i];
+					}
+				);
+					
+			bar.join("text")
+				.attr("dy", ".75em")
+				.attr("y", 6)
+				.attr("x", 50)
+				.attr("text-anchor", "middle")
+				.attr("font-size", "8px")
+				.attr("fill", "White")
+				.text(function(d) {
+					return d[1] - d[0];
+				})
+				.attr("transform",
+					function(d, i) {
+						return "translate(" + xScale(i * 100) + "," + yScale(d[1]) + ")";
+					});
+		}
+	</script>
+</html>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>哪些车站是最受欢迎的？</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="icon" href="bicycle.png" sizes="32x32">
+    <script src="d3.min.js"></script>
+    <script src="d3-geo-projection.min.js"></script>
+    <script src="https://kit.fontawesome.com/200cae3b92.js" crossorigin="anonymous"></script>
+    <style>
+        a {
+            color: black;
+            text-decoration: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            padding: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            /* 添加阴影效果 */
+        }
+
+        .tooltip h3 {
+            padding: 0;
+            margin: 0;
+        }
+
+        .tooltip p {
+            padding: 0;
+            margin: 0;
+        }
+
+        /* .foot select{
+            width: 100px;
+            height: 50px;
+        } */
+        .foot select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding: 5px;
+            border: 1px solid #ccc;
+            width: 200px;
+        }
+
+        .foot select option {
+            padding: 5px;
+        }
+
+        .show-div {
+            /* width: 1300px; */
+            display: flex;
+            margin: 0 auto;
+            margin-top: 35px;
+        }
+
+        .tool-div {
+            margin: 0px 20px 0px 20px;
+            /* margin-top: 50px; */
+            width: auto;
+        }
+
+        .foot input {
+            width: 20px;
+            height: 20px;
+        }
+
+        .ab_a {
+            position: absolute;
+            left: 100px;
+            top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: center;">
+        <!-- <image src="bicycle.png" style="width: 50px;height: 50px;"></image> -->
+        <a class="ab_a" href="../index.html" style="font-size: 30px;"><i class="fa-solid fa-angle-left"></i>首页</a>
+        <h1 style="display: inline;">在泽西市的自行车租赁服务中，哪些车站是最受欢迎的？</h1>
+    </div>
+    <div class="show-div">
+        <svg width="1200" height="770" id="mainsvg" class="svgs"
+            style='display: block; margin: 0px 0px 0px 100px ;'></svg>
+        <div class="tool-div">
+            <div style="display: inline-flex;">
+                <div class="show-circle">
+                    骑行量</br>
+                    <svg id="rightsvg" height="300" width="150"></svg>
+                </div>
+                <div id="hourdiv">
+                    <svg id="hoursvg" width="400" height="300"></svg>
+                </div>
+            </div>
+            <div class="select-div">
+                <div class="foot">
+                    <input class="btn-check" type="radio" id="all_radio" name="user_type" value="all" checked>
+                    <label for="all_radio">全部</label>
+                    <input type="radio" id="subscriber_radio" name="user_type" value="Subscriber">
+                    <label for="subscriber_radio">会员</label>
+                    <input type="radio" id="customer_radio" name="user_type" value="Customer">
+                    <label for="customer_radio">非会员</label>
+                </div>
+
+                <div class="foot">
+                    <input type="radio" id="all_station_radio" name="station_type" value="all" checked>
+                    <label for="all_radio">全部</label>
+                    <input type="radio" id="start_radio" name="station_type" value="start">
+                    <label for="subscriber_radio">起点站</label>
+                    <input type="radio" id="end_radio" name="station_type" value="end">
+                    <label for="customer_radio">终点站</label>
+                </div>
+                选择时间段：
+                <select id="time_select" title="选择范围">
+                    <option value=-1>所有时间段</option>
+                    <option value=0>0</option>
+                    <option value=1>1</option>
+                    <option value=2>2</option>
+                    <option value=3>3</option>
+                    <option value=4>4</option>
+                    <option value=5>5</option>
+                    <option value=6>6</option>
+                    <option value=7>7</option>
+                    <option value=8>8</option>
+                    <option value=9>9</option>
+                    <option value=10>10</option>
+                    <option value=11>11</option>
+                    <option value=12>12</option>
+                    <option value=13>13</option>
+                    <option value=14>14</option>
+                    <option value=15>15</option>
+                    <option value=16>16</option>
+                    <option value=17>17</option>
+                    <option value=18>18</option>
+                    <option value=19>19</option>
+                    <option value=20>20</option>
+                    <option value=21>21</option>
+                    <option value=22>22</option>
+                    <option value=23>23</option>
+
+                </select><br>
+                <button onclick="reduce()">-</button>
+                <input type="range" id="progress_bar" min="-1" max="23" step="1" value="-1" style="width:350px;">
+                <button onclick="add()">+</button>
+            </div>
+            <div style="width: 400px;">
+                <h2>结论：</h2>
+                <p>
+                    对于会员⽤户⽽⾔：</br>共享单车主要⽤于早上8点、下午18点的上下班通勤。</br>早上8点的租赁⾏为主要发⽣在一个受欢迎的居住区。<span>
+                        <button onclick="moniMove('Hamilton Park')"><b>Hamilton
+                                Park</b></button></span>汉密尔顿公园，其周围有大量的住宅区和办公楼。
+                </p>
+                <p>
+                    下午18点的租赁行为则主要发生在<button onclick="moniMove('Grove St PATH')"><b>Grove StreetPATH Station</b></button></span>格罗夫大街地铁站。该站点位于市中心繁忙的商业区。这可能意味着会员用户在工作结束后，选择从工作地点回家或进行其他活动时使用共享单车。<span>
+                </p>
+
+                    <p>
+                        非会员用户的出行并没有呈现出一种早晚高峰的通勤趋势。从6点开始，租赁量不断上升，到18点达到最高峰。
+                    </p>
+            </div>
+        </div>
+
+    </div>
+    <div class="tooltip"></div>
+    <script>
+        var en_zh = {
+            'Grove St PATH': '格罗夫大街', 'Brunswick St': '不伦瑞克街', 'Sip Ave': '西普大道',
+            'Newark Ave': '纽瓦克大道', 'Warren St': '沃伦街', 'Exchange Place': '交换场所',
+            'Van Vorst Park': '范沃斯特公园', 'Lincoln Park': '林肯公园', 'McGinley Square': '麦金利广场',
+            'Newport PATH': '纽波特大道', 'Essex Light Rail': '埃塞克斯轻轨', 'Oakland Ave': '奥克兰大道',
+            'Newport Pkwy': '纽波特Pkwy', 'Hamilton Park': '汉密尔顿公园', 'Garfield Ave Station': '加菲尔德大道站',
+            'City Hall': '市政厅', 'Liberty Light Rail': '自由轻轨', 'Christ Hospital': '基督医院',
+            'Baldwin at Montgomery': '蒙哥马利的鲍德温', 'Hilltop': '山顶', 'Paulus Hook': '保卢斯胡克',
+            'JC Medical Center': 'JC医疗中心', '5 Corners Library': '5角图书馆', 'Dey St': '戴伊街',
+            'Jersey & 6th St': '泽西岛和第六街', 'Morris Canal': '莫里斯运河', 'Jersey & 3rd': '泽西岛和第三街',
+            'Lafayette Park': '拉斐特公园', 'Monmouth and 6th': '蒙茅斯和第六街', 'Dixon Mills': '迪克森米尔斯',
+            'Marin Light Rail': '马林轻轨', 'Manila & 1st': '马尼拉和1st', 'Columbus Drive': '哥伦布大道',
+            'Brunswick & 6th': '不伦瑞克和第六', 'Astor Place': '阿斯特广场',
+            'Communipaw & Berry Lane': 'Communipaw & Berry Lane', 'York St': '约克街',
+            'Harborside': '港边', 'Washington St': '华盛顿街', 'Journal Square': ' 期刊广场',
+            'Montgomery St': '蒙哥马利街', 'Glenwood Ave': '格伦伍德大道', 'Fairmount Ave': '费尔芒特大道',
+            'Bergen Ave': '卑尔根大道', 'Grand St': '大街', 'Jackson Square': '杰克逊广场',
+            'Hoboken Ave at Monmouth St': '蒙茅斯街的霍博肯大道', 'Columbus Dr at Exchange Pl': '哥伦布博士在交易所'
+        };
+
+        const svg = d3.select('#mainsvg');
+        const r_svg = d3.select('#rightsvg');
+        const h_svg = d3.select('#hoursvg');
+        const width = svg.attr('width');
+        const height = svg.attr('height');
+
+        const tooltip = d3.select('.tooltip');
+
+        const update = (x) => {
+            const { user_type = 'all', station_type = 'all', time_select = -1 } = x
+
+            d3.json('map_rect.json').then(async data => {
+                const projection = d3.geoIdentity()
+                    .fitExtent([[0, 0], [width, height]], data);
+
+                const path = d3.geoPath().projection(projection);
+
+                const bounds = path.bounds(data);
+                const pathWidth = bounds[1][0] - bounds[0][0];
+                const pathHeight = bounds[1][1] - bounds[0][1];
+
+                if (svg.selectAll('defs')._groups[0].length == 0) {
+                    svg.append('defs')
+                        .append('pattern')
+                        .attr('id', 'image-pattern')
+                        .attr('width', '100%')
+                        .attr('height', '100%')
+                        .append('image')
+                        .attr('xlink:href', './jersey.jpg')
+                        .attr('preserveAspectRatio', 'xMidYMid slice')
+                        .attr('preserveAspectRatio', 'none')
+                        .attr('width', pathWidth + 'px')
+                        .attr('height', pathHeight + 'px');
+                }
+
+                svg.selectAll('path')
+                    .data(data.features.filter(d => d.geometry.type !== 'Point'))
+                    .join('path')
+                    .attr('stroke', 'black')
+                    .attr('d', path)
+                    .attr('transform', `scale(1, -1) translate(0, -${height})`)
+                    .attr('fill', 'url(#image-pattern)');
+
+                const csv_json = (data) => {
+                    var big_obj = {
+                        type: "FeatureCollection", features: [{
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "coordinates": [
+                                    [
+                                        [
+                                            -74.08098705263562,
+                                            40.74122818944596
+                                        ],
+                                        [
+                                            -74.08098705263562,
+                                            40.69628142474161
+                                        ],
+                                        [
+                                            -74.01549878391052,
+                                            40.69628142474161
+                                        ],
+                                        [
+                                            -74.01549878391052,
+                                            40.74122818944596
+                                        ],
+                                        [
+                                            -74.08098705263562,
+                                            40.74122818944596
+                                        ]
+                                    ]
+                                ],
+                                "type": "Polygon"
+                            }
+                        },]
+                    };
+                    for (let d of data) {
+                        var obj = {
+                            "type": "Feature",
+                            "properties": {
+                                "station_type": d.station_type,
+                                "station_name": d.station_name,
+                                "user_type": d.user_type,
+                                "age": +d.age,
+                                "hour": +d.hour,
+                                "num": +d.num
+                            },
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [
+                                    +d.longitude,
+                                    +d.latitude
+                                ]
+                            }
+                        }
+                        big_obj.features.push(obj);
+                    }
+                    return big_obj;
+                }
+
+                d3.csv('map_point.csv').then(async data => {
+                    console.log(data)
+                    data = csv_json(data);
+                    console.log(data)
+                    let Subscriber = {};
+                    let Customer = {};
+                    let all = {};
+                    for (let i of data.features.slice(1)) {
+                        let key = i.properties.hour;
+                        let u_t = i.properties.user_type;
+                        if (all[key] == undefined) {
+                            all[key] = i.properties.num;
+                        }
+                        else {
+                            all[key] += i.properties.num;
+                        }
+                        if (u_t == "Subscriber") {
+                            if (Subscriber[key] == undefined) {
+                                Subscriber[key] = i.properties.num;
+                            }
+                            else {
+                                Subscriber[key] += i.properties.num;
+                            }
+                        }
+                        else {
+                            if (Customer[key] == undefined) {
+                                Customer[key] = i.properties.num;
+                            }
+                            else {
+                                Customer[key] += i.properties.num;
+                            }
+                        }
+                    }
+
+                    const numExtent = d3.extent(data.features.slice(1).filter(
+                        d => (d.properties.user_type == user_type || user_type == 'all') &&
+                            (d.properties.station_type == station_type || station_type == 'all') &&
+                            (d.properties.hour == time_select || time_select == -1)
+                    ), d => d.properties.num);
+                    // const numExtent = d3.extent(data.features.slice(1), d => d.properties.num);
+                    const radiusScale = d3.scaleLinear()
+                        .domain(numExtent) // 输入域为 num 的范围
+                        .range([5, 28]); // 输出范围为你想要的半径范围，这里设定为 5 到 20
+
+                    svg.selectAll('circle')
+                        // .data(data.features.slice(1))
+                        .data(data.features.slice(1).filter(
+                            d => (d.properties.user_type == user_type || user_type == 'all') &&
+                                (d.properties.station_type == station_type || station_type == 'all') &&
+                                (d.properties.hour == time_select || time_select == -1)
+                        ))
+                        .join('circle')
+                        .attr('id', d => d.properties.station_name)
+                        .attr('cx', d => path.centroid(d)[0])
+                        .attr('cy', d => path.centroid(d)[1])
+                        .attr('r', d => radiusScale(d.properties.num))
+                        .attr('old_r', d => radiusScale(d.properties.num))
+                        .style('opacity', 0.7)
+                        .attr('fill', 'green')
+                        .attr('transform', `scale(1, -1) translate(0, -${height})`)
+                        .on('mouseover', (event, d) => {
+                            const [x, y] = [event.target.cx.animVal.value, event.target.cy.animVal.value]
+
+                            let html = `<h3>${d.properties.station_name}</h3>(${en_zh[d.properties.station_name]})<p><b>骑行量：</b>${d.properties.num}</p>`
+
+                            tooltip.html(html)
+                                .style('opacity', 1)
+                                .style('left', `${x}px`)
+                                .style('top', `${pathHeight - y - 50}px`);
+
+                            const circle = event.target;
+                            let old_r = parseInt(d3.select(circle).attr('old_r'))
+                            d3.select(circle).transition().duration(200).ease(d3.easeLinear).attr('r', (old_r + 5).toString())
+                                .transition().attr('r', old_r.toString());
+
+                        })
+                        .on('mouseout', (event) => {
+                            tooltip.style('opacity', 0);
+                        })
+                        .on('click', (event) => {
+                            d3.select(event.target).dispatch('mouseover')
+                        })
+
+
+                    // //处理filter问题
+                    let c
+                    let dic = {}
+                    for (c of svg.selectAll('circle')._groups[0]) {
+                        let key = c.__data__.geometry.coordinates[0] + '++' + c.__data__.geometry.coordinates[1]
+                        if (dic.hasOwnProperty(key)) {
+                            dic[key].push(c)
+                        }
+                        else {
+                            dic[key] = [c,]
+                        }
+                    }
+
+                    let cs
+                    let total_List = []
+                    for (cs in dic) {
+                        if (dic[cs].length > 1) {
+                            let total = 0
+                            for (let scs in dic[cs]) {
+                                total += dic[cs][scs].__data__.properties.num
+                            }
+                            total_List.push(total)
+                            let mainSVG = document.getElementById('mainsvg')
+
+                            for (let scs in dic[cs]) {
+                                if (scs > 0) {
+                                    mainSVG.removeChild(dic[cs][scs])
+                                }
+                            }
+                            dic[cs][0].__data__.properties.num = total
+
+                        }
+                    }
+                    if (total_List.length > 1) {
+                        const new_numExtent = d3.extent(total_List, d => d);
+                        const new_radiusScale = d3.scaleLinear()
+                            .domain(new_numExtent)
+                            .range([5, 28]);
+
+                        const circles = svg.selectAll('circle').nodes();
+
+                        for (const circle of circles) {
+                            const data = d3.select(circle).data()[0];
+                            const newRadius = new_radiusScale(data.properties.num);
+                            d3.select(circle).attr('r', newRadius).attr('old_r', newRadius);
+                            //
+                        }
+                        //在这加
+                        total_List = total_List.sort(function (a, b) { return b - a; });
+                        var right_dic = {};
+                        let right_list = [];
+                        for (let i of total_List) {
+                            let key = Math.round(new_radiusScale(i));
+                            let last_key = Object.keys(right_dic)[0];
+                            if (last_key === undefined || parseInt(last_key) - key > 4 || key === 3) {
+                                right_dic[key] = i;
+                                right_list.push(i);
+                                if (key === 3) {
+                                    break;
+                                }
+                            }
+                        }
+                        right_list[right_list.length - 1] = total_List[total_List.length - 1];
+                        r_svg.attr('my_y', 10);
+                        const new_right = (d) => {
+                            let y = parseInt(r_svg.attr('my_y')) + new_radiusScale(d);
+                            r_svg.attr('my_y', parseInt(r_svg.attr('my_y')) + 2 * new_radiusScale(d) + 10)
+                            return y;
+                        }
+                        let x = new_radiusScale(total_List[0]);
+                        r_svg.selectAll('circle')
+                            .data(right_list)
+                            .join('circle')
+                            .attr('cx', x)
+                            .attr('cy', d => new_right(d))
+                            .attr('r', d => new_radiusScale(d))
+                            .attr('old_r', d => new_radiusScale(d))
+                            .attr('fill', 'green')
+                            .on('mouseover', (event) => {
+                                let right_r = event.target.__data__;
+                                const circles = svg.selectAll('circle').nodes();
+                                let left_circle;
+                                for (const circle of circles) {
+                                    let left_r = d3.select(circle).data()[0].properties.num;
+                                    if (Math.abs(Math.round(new_radiusScale(left_r)) - Math.round(new_radiusScale(right_r))) <= 2) {
+                                        // if (Math.round(new_radiusScale(left_r)) == Math.round(new_radiusScale(right_r))) {
+                                        let old_r = parseInt(d3.select(circle).attr('old_r'))
+                                        if (left_r === right_r) {
+                                            d3.select(circle).dispatch('mouseover').transition().duration(200).ease(d3.easeLinear).
+                                                attr('fill', 'red').
+                                                attr('r', (old_r + 10).toString())
+                                                .transition().attr('r', old_r.toString())
+                                                .attr('fill', 'green');
+                                        }
+                                        else {
+                                            d3.select(circle).transition().duration(200).ease(d3.easeLinear).attr('r', (old_r + 10).toString())
+                                                .transition().attr('r', old_r.toString());
+                                        }
+                                    }
+
+                                }
+                            })
+                            .on('mouseout', (event) => {
+                                tooltip.style('opacity', 0);
+                            })
+                            .on('click', (event) => {
+                                d3.select(event.target).dispatch('mouseover')
+                            });
+
+                        // r_svg.attr('height', parseInt(r_svg.attr('my_y')) + 20)
+
+                        r_svg.attr('my_y', 10);
+                        r_svg.selectAll('text')
+                            .data(right_list)
+                            .join('text')
+                            .text(d => d)
+                            .attr('x', 2 * x + 20)
+                            .attr('y', d => new_right(d) + 5)
+                            .attr('fill', 'black')
+
+                    }
+                    if (user_type == "Subscriber") {
+                        show_h(Subscriber);
+                    }
+                    else if (user_type == "Customer") {
+                        show_h(Customer);
+                    }
+                    else {
+                        show_h(all);
+                    }
+                });
+
+            })
+        }
+
+        //首次
+        update({})
+
+        const show_h = (dic) => {
+            d3.select('#hoursvg').selectAll("*").remove();
+            let hour_list = dic;
+            let dataset = []
+            for (let i = 0; i < 24; i++) {
+                dataset.push([i, hour_list[i]])
+            }
+            // console.log(dataset);
+
+            var min = d3.min(dataset, function (d) {
+                return d[1];
+            })
+            var max = d3.max(dataset, function (d) {
+                return d[1];
+            })
+
+            // 图表的宽度和高度
+            var h_width = 400;
+            var h_height = 300;
+            // 预留给轴线的距离
+            var h_padding = { top: 10, right: 10, bottom: 50, left: 50 };
+            var h_xScale = d3.scaleLinear()
+                .domain([0, 24])
+                .range([0, h_width - h_padding.left - h_padding.right]);
+            var h_yScale = d3.scaleLinear()
+                .domain([0, max])
+                .range([h_height - h_padding.top - h_padding.bottom, 0]);
+
+
+            var h_xAxis = d3.axisBottom()
+                .scale(h_xScale);
+            var h_yAxis = d3.axisLeft()
+                .scale(h_yScale);
+
+            h_svg.append('g').attr('class', 'axis')
+                .attr('transform', 'translate(' + h_padding.left + ',' + (h_height - h_padding.bottom) + ')')
+                .call(h_xAxis);
+
+
+            h_svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', 'translate(' + h_padding.left + ',' + h_padding.top + ')')
+                .call(h_yAxis);
+
+            var linePath = d3.line()
+                .x(function (d) { return h_xScale(d[0]) })
+                .y(function (d) { return h_yScale(d[1]) });
+
+            var move_line_path = d3.line()
+                .x(function (d) { return d[0] })
+                .y(function (d) { return h_yScale(d[1]) });
+
+            h_svg.append('g')
+                .append('path')
+                .attr('class', 'line-path')
+                .attr('transform', 'translate(' + h_padding.left + ',' + h_padding.top + ')')
+                .attr('d', linePath(dataset))
+                .attr('fill', 'none')
+                .attr('stroke-width', 3)
+                .attr('stroke', 'green');
+
+
+            h_svg.append('g')
+                .selectAll('circle')
+                .data(dataset)
+                .enter()
+                .append('circle')
+                .attr('id', d => 'h' + d[0])
+                .attr('r', 5)
+                .attr('transform', function (d) {
+                    return 'translate(' + (h_xScale(d[0]) + h_padding.left) + ',' + (h_yScale(d[1]) + h_padding.top) + ')'
+                })
+                .attr('fill', 'green')
+                .on('mouseover', (event, d) => {
+
+
+                    let html = `<p>${d[1]}</p>`
+                    tooltip.html(html)
+                        .style('opacity', 1)
+                        .style('left', `${event.clientX - 50}px`)
+                        .style('top', `${event.clientY - 50}px`);
+
+                })
+                .on('mouseout', (event) => {
+                    tooltip.style('opacity', 0);
+                })
+                .on('click', (event) => {
+                    d3.select(event.target).dispatch('mouseover')
+                });
+
+            h_svg.append('g')
+                .append('path')
+                .attr('class', 'line-path')
+                .attr('transform', 'translate(' + h_padding.left + ',' + h_padding.top + ')')
+                .attr('id', 'move_line')
+                .attr('fill', 'none')
+                .attr('stroke-width', 2)
+                .attr('stroke', 'red');
+
+
+            h_svg.on('mousemove', (event) => {
+                let [x, y] = [event.clientX, event.clientY]
+                let svg_rect = document.getElementById('hoursvg').getBoundingClientRect();
+
+                let svg_x = h_xScale.invert(x - svg_rect.left - h_padding.left);
+                svg_x = Math.round(svg_x)
+
+                if (svg_x >= 0 && svg_x <= 23) {
+                    // console.log(dic[svg_x])
+                    d3.select('#move_line')
+                        .attr('d', linePath([[svg_x, 0], [svg_x, dic[svg_x]]]))
+
+                    d3.select('#h' + svg_x).dispatch('click')
+                }
+
+            })
+                .on('mouseover', (event) => {
+                    d3.select('#move_line').style('opacity', 1);
+                })
+                .on('mouseout', (event) => {
+                    tooltip.style('opacity', 0);
+                    d3.select('#move_line').style('opacity', 0);
+                })
+
+            h_svg.append('text').attr('class', 'axisTitle').text('时间段').attr('y', 290).attr('x', 350)
+
+        }
+
+        const filterWhat = () => {
+            var userTypeRadios = document.getElementsByName("user_type");
+            var user_type = '';
+            for (var i = 0; i < userTypeRadios.length; i++) {
+                if (userTypeRadios[i].checked) {
+                    user_type = userTypeRadios[i].value;
+                    break;
+                }
+            }
+            // 获取站点类型的选中值
+            var stationTypeRadios = document.getElementsByName("station_type");
+            var station_type = '';
+            for (var i = 0; i < stationTypeRadios.length; i++) {
+                if (stationTypeRadios[i].checked) {
+                    station_type = stationTypeRadios[i].value;
+                    break;
+                }
+            }
+
+            const selectElement = document.getElementById('time_select')
+            const time_select = selectElement.value;
+
+            return { user_type, station_type, time_select }
+        }
+
+        function moniMove(name) {
+            const circle = document.getElementById(name)
+            d3.select(circle).dispatch('click');
+        }
+        var subscriberRadio = document.getElementById("subscriber_radio");
+        var customerRadio = document.getElementById("customer_radio");
+        var allRadio = document.getElementById("all_radio");
+
+        subscriberRadio.addEventListener("change", handleRadioChange);
+        customerRadio.addEventListener("change", handleRadioChange);
+        allRadio.addEventListener("change", handleRadioChange);
+
+        var startRadio = document.getElementById("start_radio");
+        var endRadio = document.getElementById("end_radio");
+        var all_station_Radio = document.getElementById("all_station_radio");
+
+        startRadio.addEventListener("change", handleRadioChange);
+        endRadio.addEventListener("change", handleRadioChange);
+        all_station_Radio.addEventListener("change", handleRadioChange);
+
+        function handleRadioChange(event) {
+            let x = filterWhat()
+            console.log(x)
+            update(x)
+        }
+
+        function reduce() {
+            if (document.getElementById('progress_bar').value > -1 && document.getElementById('time_select').value > -1) {
+                document.getElementById('progress_bar').value--;
+                document.getElementById('time_select').value--;
+                handleRadioChange(event)
+            }
+        }
+
+        function add() {
+            if (document.getElementById('progress_bar').value < 23) {
+                document.getElementById('progress_bar').value++;
+                document.getElementById('time_select').value++;
+                handleRadioChange(event)
+            }
+        }
+
+        const selectElement = document.getElementById('time_select')
+        selectElement.addEventListener('change', function (event) {
+            var progressBar = document.getElementById("progress_bar");
+            var value = event.target.value;
+            progressBar.value = value
+            handleRadioChange(event)
+        });
+
+        var progressBar = document.getElementById("progress_bar");
+        var timeSelect = document.getElementById("time_select");
+        progressBar.addEventListener("input", function (event) {
+            var value = event.target.value;
+            timeSelect.value = value;
+            let x = filterWhat()
+            console.log(x)
+            update(x)
+        });
+
+
+    </script>
+</body>
+
+</html>

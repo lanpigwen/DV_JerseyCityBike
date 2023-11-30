@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <title>车站连线图</title>
+    <script src="d3.min.js"></script>
+    <style>
+        .link {
+            fill: none;
+            stroke-width: 1.5px;
+            stroke: lightblue; /* 更改连线颜色为浅蓝色 */
+        }
+
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <svg width="2500" height="2500" id="mainsvg" class="svgs" style='display: block; margin: 0 auto;'></svg>
+    <script>
+        const svg = d3.select('svg');
+        const width = svg.attr('width');
+        const height = svg.attr('height');
+        const colors = d3.schemeCategory10.concat(d3.schemeDart2).concat(d3.schemeTableau10).concat(d3.schemeSet1).concat(d3.schemePaired);
+        const colorNode = d3.scaleOrdinal().range(colors);
+        const colorLink = d3.scaleSequential(d3.interpolateBuPu);
+        let NODENUM = 1;
+        const RADIUS = 5;
+        const arcAngle = 10;
+        const arcRadii = '1 1'
+        const arc = d => {
+            return `M ${cx(d.source)} ${cy(d.source)} A ${arcRadii} ${arcAngle} 0 0 ${cx(d.target)} ${cy(d.target)}`;
+        }
+        const cx = d => (width / (NODENUM + 1)) * (d.ord + 1);
+        const cy = d => height / 2;
+
+        // loading data & initializing the vis. 
+        d3.csv('station6.csv').then(nodes => {
+            NODENUM = nodes.length;
+            d3.csv('station3.csv').then(links => {
+                for (let link of links) {
+                    link.source = nodes.find(node => node.id === link.source_id);
+                    link.target = nodes.find(node => node.id === link.target_id);
+                }
+                for (let i = 0; i < nodes.length; i++) {
+                    nodes[i].ord = i;
+                }
+
+                colorNode.domain(nodes.map(d => d.id));
+                colorLink.domain(d3.extent(links.map(d => d.value)));
+
+                const filteredLinks = links.filter(link => link.source && link.target);
+
+                svg.selectAll('.myCircle').data(nodes).join('circle').attr('class', 'myCircle')
+                    .attr('cy', cy).attr('cx', cx).attr('r', RADIUS)
+                    .attr('stroke', 'black').attr('fill', d => colorNode(d.id))
+                    .attr('class', 'node');
+
+                svg.selectAll('.myPath').data(filteredLinks).join('path').attr('class', 'myPath')
+                    .attr('d', arc).attr('fill', 'none')
+                    .attr('stroke-width', d => Math.sqrt(d.value) * 0.2).attr('stroke', 'lightblue') /* 更改连线颜色为浅蓝色 */
+                    .attr('class', 'link');
+
+                svg.selectAll('.myText').data(nodes).join('text').attr('class', 'text')
+                    .attr('y', cy).attr('x', cx).attr('dy', 10)
+                    .attr('text-anchor', 'start').attr('writing-mode', 'vertical-rl')
+                    .text(d => d.name);
+            })
+        })
+
+    </script>
+</body>
+
+</html>
